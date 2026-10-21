@@ -1,0 +1,11 @@
+numpy
+imageio-ffmpeg
+librosa
+omegaconf
+pandas
+resampy
+tabulate
+rich
+celluloid
+matplotlib
+ptflops
