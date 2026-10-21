@@ -13,6 +13,7 @@ Darija tech reels: every reel on the account is voiced this way.
 
 https://github.com/user-attachments/assets/0df8f953-da42-4f58-a09f-77b12363959f
 
+Watch it on TikTok: https://www.tiktok.com/@justbyamine/video/7698596556538137908
 (File in the repo: [demo/REA-reel-demo.mp4](demo/REA-reel-demo.mp4).)
 
 ## Proof: used on my published reels
