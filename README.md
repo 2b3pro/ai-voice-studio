@@ -1,13 +1,33 @@
 # AI Voice Studio 🎧 — WhatsApp voice note ➜ studio mic
 
-Turn a phone / WhatsApp voice note into a voice that sounds like it was recorded on a pro microphone.
-Local, free, no subscription. Made by **Amine ([@justbyamine](https://www.instagram.com/justbyamine/))** for his
-Darija tech reels: every reel on the account is voiced this way.
+**Turn your phone voice note into a studio-mic voice. Free, local, one command.**
+
+[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/OutOfAmine/ai-voice-studio/blob/main/ai_voice_studio.ipynb)
+![License: MIT](https://img.shields.io/badge/license-MIT-green)
+![Python 3.10](https://img.shields.io/badge/python-3.10-blue)
+![GPU or CPU](https://img.shields.io/badge/runs%20on-GPU%20%7C%20CPU-orange)
+
+Same take, same phone. Turn the sound on 🔊
+
+https://github.com/user-attachments/assets/ad3ca9ae-6334-4b67-8e34-ae149464f1f7
+
+No noise, no room echo, the treble WhatsApp cuts off rebuilt, long pauses tightened, mixed to the loudness
+Instagram and TikTok expect. Made by **Amine ([@justbyamine](https://www.instagram.com/justbyamine/))**: every
+Darija tech reel on the account is voiced this way.
+
+## Quick start
+
+| You have | Do this |
+|---|---|
+| No GPU, nothing installed | Click **Open in Colab** above (or import [`ai_voice_studio.ipynb`](ai_voice_studio.ipynb) in Kaggle), Run all, open the link it prints |
+| A PC (Windows/Linux) | Install (below), then `python app.py` and drop your voice note in the browser |
+| A terminal habit | `python voice_pro.py "WhatsApp Audio.mp4" output` |
 
 ## Demo
 
-**Before / after** (raw WhatsApp voice, short pause, then the same take after the script):
-[demo/before-after.mp3](demo/before-after.mp3)
+**Before / after audio only:** [demo/before-after.mp3](demo/before-after.mp3)
+(video above: [demo/before-after.mp4](demo/before-after.mp4), made with [`tools/make_demo_video.py`](tools/make_demo_video.py)
+so you can build the same comparison for your own voice).
 
 **The reel about this tool**, as published on TikTok (downloaded from TikTok Studio, with the @justbyamine
 watermark). It plays the raw WhatsApp voice, then the same voice after the script; turn the sound on:
@@ -53,6 +73,14 @@ No NVIDIA GPU? Install the normal torch (`pip install torch torchaudio`); it wor
 The script stubs `deepspeed` (only needed for training) so resemble-enhance imports on Windows.
 
 ## Use
+
+Web UI (upload or record, pick Strong / Soft, download the result):
+
+```
+.venv\Scripts\python app.py
+```
+
+Command line:
 
 ```
 .venv\Scripts\python voice_pro.py "WhatsApp Audio.mp4" output
