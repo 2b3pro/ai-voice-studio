@@ -39,11 +39,14 @@ def run(a):
  if p.returncode:raise RuntimeError(p.stderr)
  return p.stderr
 def dec(p):return np.frombuffer(subprocess.run([F,'-v','error','-i',str(p),'-ac','1','-ar',str(SR),'-f','f32le','-'],capture_output=True,check=True).stdout,np.float32).copy()
-def write(p,x):subprocess.run([F,'-v','error','-y','-f','f32le','-ar',str(SR),'-ac','1','-i','-','-c:a','pcm_s24le',str(p)],input=x.astype('<f4').tobytes(),check=True)
-def loudnorm(src,dst,I=-14,TP=-1.5,LRA=7):
- v=json.loads(re.findall(r'\{[^{}]+\}',run(['-i',str(src),'-af',f'loudnorm=I={I}:TP={TP}:LRA={LRA}:print_format=json','-f','null','-']))[-1])
- run(['-i',str(src),'-af',f"loudnorm=I={I}:TP={TP}:LRA={LRA}:measured_I={v['input_i']}:measured_TP={v['input_tp']}:measured_LRA={v['input_lra']}:measured_thresh={v['input_thresh']}:offset={v['target_offset']}:linear=true",'-ar',str(SR),'-c:a','pcm_s24le',str(dst)])
- return float(v['input_i'])
+def write(p,x,codec='pcm_s24le'):subprocess.run([F,'-v','error','-y','-f','f32le','-ar',str(SR),'-ac','1','-i','-','-c:a',codec,str(p)],input=x.astype('<f4').tobytes(),check=True)
+def loudnorm(src,dst,I=-14,TP=-1.5):
+ # Measured, purely linear gain to I LUFS (ffmpeg's loudnorm "linear" mode silently turns dynamic when the gain would
+ # break TP). The limiter before this leaves headroom; if the true peak would still cross TP, give up a little loudness.
+ m=json.loads(re.findall(r'\{[^{}]+\}',run(['-i',str(src),'-af',f'loudnorm=I={I}:TP={TP}:print_format=json','-f','null','-']))[-1])
+ gain=min(I-float(m['input_i']),TP-float(m['input_tp']))
+ run(['-i',str(src),'-af',f'volume={gain:.3f}dB','-ar',str(SR),'-c:a','pcm_s24le',str(dst)])
+ return {'lufs':round(float(m['input_i'])+gain,2),'true_peak':round(float(m['input_tp'])+gain,2),'gain_db':round(gain,2)}
 
 # 1) Restoration. lambd=0.9 (strong denoise) was approved; 0.5 is the softer fallback.
 from resemble_enhance.enhancer.inference import enhance
@@ -77,7 +80,7 @@ chain=','.join(['highpass=f=60:p=2',
  'equalizer=f=120:t=q:w=0.9:g=3',      # proximity warmth
  'equalizer=f=380:t=q:w=1.4:g=-3',     # remove boxy/phone tone
  'equalizer=f=4800:t=q:w=1.2:g=2.5',   # presence / intelligibility
- 'treble=g=3:f=11000:t=s:w=0.7',       # air shelf
+ f"treble=g={float(os.environ.get('VOICE_AIR_DB','3'))}:f=11000:t=s:w=0.7",  # air shelf (lower VOICE_AIR_DB if Strong mode sounds hissy)
  'deesser=i=0.35:m=0.5:f=0.5:s=o',
  'acompressor=threshold=0.1:ratio=3:attack=5:release=80:knee=4:makeup=1.5',
  'acompressor=threshold=0.35:ratio=6:attack=1:release=40:knee=2'])
@@ -90,8 +93,12 @@ g=10**((-14-float(v['input_i']))/20)
 w=np.random.default_rng(3).standard_normal(len(z)).astype(np.float32);b=np.zeros_like(w);acc=0
 for i in range(len(w)):acc=.985*acc+w[i];b[i]=acc
 b=b-np.convolve(b,np.ones(4800)/4800,'same');b/=np.sqrt(np.mean(b**2))
-write(O/'4-gain.wav',z*g+b*10**(-66/20))
-loudnorm(O/'4-gain.wav',O/'Voice-Pro-Final.wav')
-(O/'4-gain.wav').unlink()
+# Keep the gained signal in float (no clipping above 0 dBFS), limit the peaks to about -4.4 dBFS so the last step can
+# get a plain linear gain instead of a pumping dynamic loudnorm on top of the two compressors.
+# level=0: alimiter must not renormalize to 0 dB.
+write(O/'4-gain.wav',z*g+b*10**(-66/20),'pcm_f32le')
+run(['-i',str(O/'4-gain.wav'),'-af','alimiter=limit=0.6:attack=1:release=50:level=0','-ar',str(SR),'-c:a','pcm_f32le',str(O/'5-limited.wav')])
+final=loudnorm(O/'5-limited.wav',O/'Voice-Pro-Final.wav')
+for f in ('4-gain.wav','5-limited.wav'):(O/f).unlink()
 (O/'time-map.json').write_text(json.dumps({'map':tmap,'removed':removed,'old_duration':len(x)/SR,'new_duration':len(y)/SR},indent=1))
-print(json.dumps({'pauses_tightened':len(removed),'old_s':round(len(x)/SR,2),'new_s':round(len(y)/SR,2),'out':str(O/'Voice-Pro-Final.wav')}))
+print(json.dumps({'pauses_tightened':len(removed),'old_s':round(len(x)/SR,2),'new_s':round(len(y)/SR,2),'final':final,'out':str(O/'Voice-Pro-Final.wav')}))

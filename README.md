@@ -55,7 +55,7 @@ Follow: [Instagram @justbyamine](https://www.instagram.com/justbyamine/) ·
 | 1. AI restoration | `1-restored.wav` | [resemble-enhance](https://github.com/resemble-ai/resemble-enhance) removes noise and room echo and rebuilds the treble lost to phone compression |
 | 2. Pause tightening | `2-tight.wav` | pauses longer than 180 ms are shortened to 140 ms (8 ms crossfades) |
 | 3. Broadcast chain | `3-chain.wav` | warmth (+3 dB @120 Hz), less "phone box" (−3 dB @380 Hz), presence (+2.5 dB @4.8 kHz), air, de-esser, 2-stage compression |
-| 4. Final | `Voice-Pro-Final.wav` | quiet room tone at −66 dBFS (no dead digital silence), loudness −14 LUFS / −1.5 dBTP (Instagram / TikTok level) |
+| 4. Final | `Voice-Pro-Final.wav` | quiet room tone at −66 dBFS (no dead digital silence), gain kept in float, peak limiter, then one measured linear gain to −14 LUFS with true peak ≤ −1.5 dBTP (Instagram / TikTok level, no pumping) |
 
 It also writes `time-map.json` (old → new timings) so subtitles made on the original voice can be re-synced.
 No pitch or speed change.
@@ -94,6 +94,7 @@ The first run downloads the models.
 - Record close to the phone, in a small room with soft things around (less echo).
 - Cut your mistakes before running it; the script only shortens silences.
 - Sounds "over-processed"? Run with a softer restoration: `set VOICE_LAMBD=0.5` (PowerShell: `$env:VOICE_LAMBD="0.5"`).
+- Sounds hissy? Turn the 11 kHz air shelf down (it boosts highs the AI rebuilt): `set VOICE_AIR_DB=1` (default 3, 0 = off).
 - Very soft syllables at the end of a phrase can be erased by the restoration: listen to the result, and re-run
   with `VOICE_LAMBD=0.5` if a word disappears.
 
