@@ -9,20 +9,19 @@ Darija tech reels: every reel on the account is voiced this way.
 **Before / after** (raw WhatsApp voice, short pause, then the same take after the script):
 [demo/before-after.mp3](demo/before-after.mp3)
 
-**A full reel voiced with it**: my REA reel as published on TikTok (downloaded from TikTok Studio, with the
-@justbyamine watermark). Recorded on WhatsApp, enhanced with this script; turn the sound on:
+**The reel about this tool**, as published on TikTok (downloaded from TikTok Studio, with the @justbyamine
+watermark). It plays the raw WhatsApp voice, then the same voice after the script; turn the sound on:
 
-https://github.com/user-attachments/assets/c7b7f993-79e5-4dbe-81f2-4b3c0ca08401
+https://github.com/user-attachments/assets/dbd93934-ddee-4c4d-9f98-8867de06e567
 
-Watch it on TikTok: https://www.tiktok.com/@justbyamine/video/7698596556538137908
-(File in the repo: [demo/REA-reel-from-tiktok.mp4](demo/REA-reel-from-tiktok.mp4).)
+Watch it on TikTok: https://www.tiktok.com/@justbyamine/video/7698607101580496180
+(File in the repo: [demo/voice-pro-reel-from-tiktok.mp4](demo/voice-pro-reel-from-tiktok.mp4).)
 
 ## Proof: used on my published reels
 
 - Reel about this tool, Instagram: https://www.instagram.com/reel/DetAeRqA1k8/
 - Same reel on TikTok: https://www.tiktok.com/@justbyamine/video/7698607101580496180
 - Same reel on Facebook: https://web.facebook.com/reel/1664386081973860/
-- REA reel (demo above), TikTok: https://www.tiktok.com/@justbyamine/video/7698596556538137908
 
 Follow: [Instagram @justbyamine](https://www.instagram.com/justbyamine/) ·
 [TikTok @justbyamine](https://www.tiktok.com/@justbyamine) ·
