@@ -9,12 +9,13 @@ Darija tech reels: every reel on the account is voiced this way.
 **Before / after** (raw WhatsApp voice, short pause, then the same take after the script):
 [demo/before-after.mp3](demo/before-after.mp3)
 
-**A full reel voiced with it** (REA reel, recorded on WhatsApp, enhanced with this script; turn the sound on):
+**A full reel voiced with it**: my REA reel as published on TikTok (downloaded from TikTok Studio, with the
+@justbyamine watermark). Recorded on WhatsApp, enhanced with this script; turn the sound on:
 
-https://github.com/user-attachments/assets/0df8f953-da42-4f58-a09f-77b12363959f
+https://github.com/user-attachments/assets/c7b7f993-79e5-4dbe-81f2-4b3c0ca08401
 
 Watch it on TikTok: https://www.tiktok.com/@justbyamine/video/7698596556538137908
-(File in the repo: [demo/REA-reel-demo.mp4](demo/REA-reel-demo.mp4).)
+(File in the repo: [demo/REA-reel-from-tiktok.mp4](demo/REA-reel-from-tiktok.mp4).)
 
 ## Proof: used on my published reels
 
