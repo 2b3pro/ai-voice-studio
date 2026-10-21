@@ -1,4 +1,4 @@
-"""Build demo/before-after.mp4: raw WhatsApp take, a short pause, then the same take after voice_pro.py,
+"""Build demo/before-after.mp4: raw phone take, a short pause, then the same take after voice_pro.py,
 with a live waveform and a playhead so the README can play the comparison inline.
 Usage: python tools/make_demo_video.py <raw.wav> <enhanced.wav> <out.mp4> [seconds_each]"""
 import sys,subprocess,numpy as np,imageio_ffmpeg
@@ -31,7 +31,7 @@ for f in range(frames):
  d.text((W/2,60),'AI Voice Studio',font=font(46),fill=(255,255,255),anchor='mm')
  d.text((W/2,108),'same take, same phone: before and after one command',font=font(26,False),fill=(160,160,170),anchor='mm')
  pa=min(1,t/L);pb=min(1,max(0,(t-L-GAP)/L))
- panel(d,160,BA,'BEFORE  ·  WhatsApp voice note',(255,90,90),pa,t<L)
+ panel(d,160,BA,'BEFORE  ·  phone voice note',(255,90,90),pa,t<L)
  panel(d,420,BB,'AFTER  ·  voice_pro.py',(120,230,170),pb,t>=L+GAP)
  d.text((W/2,H-40),'github.com/OutOfAmine/ai-voice-studio  ·  @justbyamine',font=font(22,False),fill=(120,120,130),anchor='mm')
  p.stdin.write(im.tobytes())

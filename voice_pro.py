@@ -1,4 +1,4 @@
-"""AI Voice Studio - turn a phone / WhatsApp voice note into a "studio mic" voice. By @justbyamine.
+"""AI Voice Studio - turn a phone voice note into a "studio mic" voice. By @justbyamine.
 
 Usage:
   python voice_pro.py <your_voice.(mp4|ogg|opus|m4a|wav|mp3)> <output_folder>
@@ -32,7 +32,7 @@ if os.name=='nt':pathlib.PosixPath=pathlib.WindowsPath  # model configs were sav
 if len(sys.argv)<3:sys.exit('usage: python voice_pro.py <voice file> <output folder>')
 SRC=pathlib.Path(sys.argv[1]).resolve();O=pathlib.Path(sys.argv[2]).resolve();O.mkdir(parents=True,exist_ok=True)
 F=imageio_ffmpeg.get_ffmpeg_exe();SR=48000
-# Any audio/video input (WhatsApp .mp4/.opus, .m4a, .mp3...) -> mono 48 kHz WAV
+# Any audio/video input (.mp4/.opus/.ogg, .m4a, .mp3...) -> mono 48 kHz WAV
 IN=O/'0-input.wav';subprocess.run([F,'-v','error','-y','-i',str(SRC),'-vn','-ac','1','-ar',str(SR),str(IN)],check=True)
 def run(a):
  p=subprocess.run([F,'-hide_banner','-y',*a],capture_output=True,text=True)

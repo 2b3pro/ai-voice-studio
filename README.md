@@ -1,4 +1,4 @@
-# AI Voice Studio 🎧 — WhatsApp voice note ➜ studio mic
+# AI Voice Studio 🎧 — phone voice note ➜ studio mic
 
 **Turn your phone voice note into a studio-mic voice. Free, local, one command.**
 
@@ -11,7 +11,7 @@ Same take, same phone. Turn the sound on 🔊
 
 https://github.com/user-attachments/assets/ad3ca9ae-6334-4b67-8e34-ae149464f1f7
 
-No noise, no room echo, the treble WhatsApp cuts off rebuilt, long pauses tightened, mixed to the loudness
+No noise, no room echo, the treble lost to phone compression rebuilt, long pauses tightened, mixed to the loudness
 Instagram and TikTok expect. Made by **Amine ([@justbyamine](https://www.instagram.com/justbyamine/))**: every
 Darija tech reel on the account is voiced this way.
 
@@ -21,7 +21,7 @@ Darija tech reel on the account is voiced this way.
 |---|---|
 | No GPU, nothing installed | Click **Open in Colab** above (or import [`ai_voice_studio.ipynb`](ai_voice_studio.ipynb) in Kaggle), Run all, open the link it prints |
 | A PC (Windows/Linux) | Install (below), then `python app.py` and drop your voice note in the browser |
-| A terminal habit | `python voice_pro.py "WhatsApp Audio.mp4" output` |
+| A terminal habit | `python voice_pro.py voice-note.mp4 output` |
 
 ## Demo
 
@@ -30,7 +30,7 @@ Darija tech reel on the account is voiced this way.
 so you can build the same comparison for your own voice).
 
 **The reel about this tool**, as published on TikTok (downloaded from TikTok Studio, with the @justbyamine
-watermark). It plays the raw WhatsApp voice, then the same voice after the script; turn the sound on:
+watermark). It plays the raw phone voice, then the same voice after the script; turn the sound on:
 
 https://github.com/user-attachments/assets/dbd93934-ddee-4c4d-9f98-8867de06e567
 
@@ -52,7 +52,7 @@ Follow: [Instagram @justbyamine](https://www.instagram.com/justbyamine/) ·
 
 | Step | Output | What happens |
 |---|---|---|
-| 1. AI restoration | `1-restored.wav` | [resemble-enhance](https://github.com/resemble-ai/resemble-enhance) removes noise and room echo and rebuilds the treble WhatsApp cuts off |
+| 1. AI restoration | `1-restored.wav` | [resemble-enhance](https://github.com/resemble-ai/resemble-enhance) removes noise and room echo and rebuilds the treble lost to phone compression |
 | 2. Pause tightening | `2-tight.wav` | pauses longer than 180 ms are shortened to 140 ms (8 ms crossfades) |
 | 3. Broadcast chain | `3-chain.wav` | warmth (+3 dB @120 Hz), less "phone box" (−3 dB @380 Hz), presence (+2.5 dB @4.8 kHz), air, de-esser, 2-stage compression |
 | 4. Final | `Voice-Pro-Final.wav` | quiet room tone at −66 dBFS (no dead digital silence), loudness −14 LUFS / −1.5 dBTP (Instagram / TikTok level) |
@@ -83,7 +83,7 @@ Web UI (upload or record, pick Strong / Soft, download the result):
 Command line:
 
 ```
-.venv\Scripts\python voice_pro.py "WhatsApp Audio.mp4" output
+.venv\Scripts\python voice_pro.py voice-note.mp4 output
 ```
 
 Any audio or video input works (.mp4, .opus, .ogg, .m4a, .mp3, .wav). The result is `output/Voice-Pro-Final.wav`.
@@ -101,7 +101,7 @@ The first run downloads the models.
 
 ### Darija
 
-Script li kaydir l voice note dyal WhatsApp soot b7al micro pro: kay7yed l'echo w l'souffle, kay9sser les silences
+Script li kaydir l voice note dyal tilifoun soot b7al micro pro: kay7yed l'echo w l'souffle, kay9sser les silences
 twal, kayzid chaleur w clarté, w kayjib l'volume dyal Instagram/TikTok. Kolchi f PC dyalek, fabor.
 
 ## Credits and license

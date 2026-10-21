@@ -19,7 +19,7 @@ def enhance(path,strength):
     return str(out/'Voice-Pro-Final.wav'),f"Done: {info['old_s']} s → {info['new_s']} s, {info['pauses_tightened']} long pauses tightened."
 
 with gr.Blocks(title='AI Voice Studio') as demo:
-    gr.Markdown('# AI Voice Studio 🎧\nTurn a WhatsApp / phone voice note into a studio-mic voice. '
+    gr.Markdown('# AI Voice Studio 🎧\nTurn a phone voice note into a studio-mic voice. '
                 'Runs locally: noise and echo removal, pause tightening, broadcast EQ, −14 LUFS. '
                 '[GitHub](https://github.com/OutOfAmine/ai-voice-studio) · by [@justbyamine](https://www.instagram.com/justbyamine/)')
     with gr.Row():
