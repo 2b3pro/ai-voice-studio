@@ -8,7 +8,9 @@ Steps (all local, free, no subscription):
   2-tight.wav          long pauses (> 180 ms) shortened to 140 ms
   3-chain.wav          broadcast EQ (warmth + clarity), de-esser, compression
   Voice-Pro-Final.wav  final voice, -14 LUFS (Instagram / TikTok loudness)
+  Voice-Pro-Video.mp4  (video input only) the same video with the new voice, picture untouched
 No pitch or speed change. A GPU (NVIDIA) is much faster; CPU works but is slow.
+Pauses are kept as they are for a video (VOICE_TIGHTEN=0) so the voice stays on the lips; VOICE_TIGHTEN=1 forces it.
 """
 import sys,types,pathlib,os,json,re,subprocess
 os.environ.setdefault('HF_HUB_DISABLE_XET','1')
@@ -32,8 +34,17 @@ if os.name=='nt':pathlib.PosixPath=pathlib.WindowsPath  # model configs were sav
 if len(sys.argv)<3:sys.exit('usage: python voice_pro.py <voice file> <output folder>')
 SRC=pathlib.Path(sys.argv[1]).resolve();O=pathlib.Path(sys.argv[2]).resolve();O.mkdir(parents=True,exist_ok=True)
 F=imageio_ffmpeg.get_ffmpeg_exe();SR=48000
+def progress(value,message):print('STUDIO_PROGRESS '+json.dumps({'value':value,'message':message}),flush=True)
+progress(.05,'Reading your recording')
 # Any audio/video input (.mp4/.opus/.ogg, .m4a, .mp3...) -> mono 48 kHz WAV
 IN=O/'0-input.wav';subprocess.run([F,'-v','error','-y','-i',str(SRC),'-vn','-ac','1','-ar',str(SR),str(IN)],check=True)
+probe=subprocess.run([F,'-hide_banner','-i',str(SRC)],capture_output=True,text=True,errors='replace').stderr
+VIDEO=bool(re.search(r'Stream #\S+.*: Video: (?!mjpeg|png|bmp)',probe))  # cover art in an .mp3/.m4a is not a video
+TIGHTEN=os.environ.get('VOICE_TIGHTEN','0' if VIDEO else '1')!='0'
+with __import__('wave').open(str(IN),'rb') as audio:
+ if audio.getnframes()<SR//2:raise ValueError('Record at least half a second of speech.')
+ samples=np.frombuffer(audio.readframes(audio.getnframes()),dtype='<i2')
+ if np.max(np.abs(samples.astype(np.float32)))<10:raise ValueError('This recording is silent. Check your microphone and try again.')
 def run(a):
  p=subprocess.run([F,'-hide_banner','-y',*a],capture_output=True,text=True)
  if p.returncode:raise RuntimeError(p.stderr)
@@ -50,10 +61,12 @@ def loudnorm(src,dst,I=-14,TP=-1.5):
 
 # 1) Restoration. lambd=0.9 (strong denoise) was approved; 0.5 is the softer fallback.
 from resemble_enhance.enhancer.inference import enhance
+progress(.15,'Removing noise and echo with AI — this can take a few minutes')
 wav,sr=torchaudio.load(str(IN));wav=wav.mean(0)
 e,esr=enhance(wav,sr,'cuda' if torch.cuda.is_available() else 'cpu',nfe=64,solver='midpoint',lambd=float(os.environ.get('VOICE_LAMBD','0.9')),tau=0.5)
 torchaudio.save(str(O/'1-restored.wav'),e[None].cpu(),esr)
 x=dec(O/'1-restored.wav')
+progress(.65,'Tightening long pauses' if TIGHTEN else 'Keeping your timing')
 
 # 2) Pause tightening: cut inside the quiet part, keep 70 ms after the word and 70 ms before the next.
 hop=480;env=20*np.log10(np.array([np.sqrt(np.mean(x[i:i+hop]**2)) for i in range(0,len(x)-hop,hop)])+1e-9);env-=np.percentile(env,95)
@@ -64,7 +77,7 @@ for i,v in enumerate(list(env<-42)+[False]):
   if (i-s)*hop/SR>=.18 and s>0 and i<len(env):runs.append((s*hop,i*hop))
   s=None
 KEEP=round(.14*SR);XF=round(.008*SR);parts=[];tmap=[];pos=0;out_len=0;removed=[]
-for a,b in runs:
+for a,b in runs if TIGHTEN else []:
  cut=(b-a)-KEEP
  if cut<=0:continue
  c0=a+KEEP//2;c1=c0+cut
@@ -76,6 +89,7 @@ for p in parts[1:]:
 write(O/'2-tight.wav',y)
 
 # 3) Broadcast chain.
+progress(.75,'Adding warmth, clarity and compression')
 chain=','.join(['highpass=f=60:p=2',
  'equalizer=f=120:t=q:w=0.9:g=3',      # proximity warmth
  'equalizer=f=380:t=q:w=1.4:g=-3',     # remove boxy/phone tone
@@ -87,11 +101,12 @@ chain=','.join(['highpass=f=60:p=2',
 run(['-i',str(O/'2-tight.wav'),'-af',chain,'-ar',str(SR),'-c:a','pcm_s24le',str(O/'3-chain.wav')])
 
 # 4) Room tone at -66 dBFS (after gain) so pauses never drop to dead digital silence, then loudnorm.
+progress(.85,'Balancing volume and limiting peaks')
 z=dec(O/'3-chain.wav')
 v=json.loads(re.findall(r'\{[^{}]+\}',run(['-i',str(O/'3-chain.wav'),'-af','loudnorm=I=-14:TP=-1.5:LRA=7:print_format=json','-f','null','-']))[-1])
 g=10**((-14-float(v['input_i']))/20)
-w=np.random.default_rng(3).standard_normal(len(z)).astype(np.float32);b=np.zeros_like(w);acc=0
-for i in range(len(w)):acc=.985*acc+w[i];b[i]=acc
+from scipy.signal import lfilter
+b=lfilter([1],[1,-.985],np.random.default_rng(3).standard_normal(len(z))).astype(np.float32)  # brown-ish noise
 b=b-np.convolve(b,np.ones(4800)/4800,'same');b/=np.sqrt(np.mean(b**2))
 # Keep the gained signal in float (no clipping above 0 dBFS), limit the peaks to about -4.4 dBFS so the last step can
 # get a plain linear gain instead of a pumping dynamic loudnorm on top of the two compressors.
@@ -100,5 +115,14 @@ write(O/'4-gain.wav',z*g+b*10**(-66/20),'pcm_f32le')
 run(['-i',str(O/'4-gain.wav'),'-af','alimiter=limit=0.6:attack=1:release=50:level=0','-ar',str(SR),'-c:a','pcm_f32le',str(O/'5-limited.wav')])
 final=loudnorm(O/'5-limited.wav',O/'Voice-Pro-Final.wav')
 for f in ('4-gain.wav','5-limited.wav'):(O/f).unlink()
+video=None
+if VIDEO:
+ # Same picture (stream copy, re-encoded only if the container refuses it), new voice. Pauses were kept, so it stays in sync.
+ progress(.95,'Putting the new voice on your video')
+ V=O/'Voice-Pro-Video.mp4';base=['-i',str(SRC),'-i',str(O/'Voice-Pro-Final.wav'),'-map','0:v:0','-map','1:a:0']
+ tail=['-c:a','aac','-b:a','256k','-ar',str(SR),'-movflags','+faststart',str(V)]
+ try:run([*base,'-c:v','copy',*tail])
+ except RuntimeError:run([*base,'-c:v','libx264','-crf','18','-preset','medium','-pix_fmt','yuv420p',*tail])
+ video=str(V)
 (O/'time-map.json').write_text(json.dumps({'map':tmap,'removed':removed,'old_duration':len(x)/SR,'new_duration':len(y)/SR},indent=1))
-print(json.dumps({'pauses_tightened':len(removed),'old_s':round(len(x)/SR,2),'new_s':round(len(y)/SR,2),'final':final,'out':str(O/'Voice-Pro-Final.wav')}))
+print(json.dumps({'pauses_tightened':len(removed),'old_s':round(len(x)/SR,2),'new_s':round(len(y)/SR,2),'final':final,'out':str(O/'Voice-Pro-Final.wav'),'video':video}))

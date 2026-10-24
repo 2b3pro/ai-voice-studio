@@ -9,4 +9,4 @@ rich
 celluloid
 matplotlib
 ptflops
-gradio
+gradio>=6,<7

@@ -60,6 +60,10 @@ Follow: [Instagram @justbyamine](https://www.instagram.com/justbyamine/) ·
 It also writes `time-map.json` (old → new timings) so subtitles made on the original voice can be re-synced.
 No pitch or speed change.
 
+**Video in, video out:** give it a video (.mp4, .mov, .webm) and it also writes `Voice-Pro-Video.mp4`: the same
+picture (not re-encoded) with the new voice. Pauses are kept for videos so the voice stays on the lips
+(`VOICE_TIGHTEN=1` forces the tightening anyway; `VOICE_TIGHTEN=0` turns it off for audio too).
+
 ## Install (Windows, Python 3.10)
 
 ```
@@ -75,6 +79,23 @@ The script stubs `deepspeed` (only needed for training) so resemble-enhance impo
 ## Use
 
 Web UI (upload or record, pick Strong / Soft, download the result):
+
+On Windows, double-click **Launch Studio.cmd**. The app opens in your browser.
+Keep the terminal open while using the studio; closing it stops the app.
+
+- **1. Add your voice**: choose **I have a file** or **Record my voice**, add your audio, then click **Next**.
+- **2. Clean up**: click **Make my voice better**. The recommended settings are already selected.
+  Naming the recording, choosing Strong / Soft and turning off **Shorten long pauses** are under **Optional settings**.
+- **3. Download**: play **Before** and **After** side by side, then click **Download my voice**. A video input
+  also shows the video with the new voice, ready to download from its player.
+- **Saved voices** keeps completed recordings, originals and processing results between app restarts.
+  Files are stored in `local-library/` beside `app.py` and excluded from Git.
+  Set `VOICE_STUDIO_LIBRARY` to choose another folder.
+
+The default app listens only on `127.0.0.1`. Microphone access requires browser permission;
+if the embedded browser has no microphone, open the local URL in Chrome or Edge.
+The first enhancement may download model weights; subsequent processing uses local files.
+`--share` remains an explicit opt-in for Colab: it exposes the app and library through a public link.
 
 ```
 .venv\Scripts\python app.py
