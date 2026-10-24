@@ -83,7 +83,7 @@ Web UI (upload or record, pick Strong / Soft, download the result):
 On Windows, double-click **Launch Studio.cmd**. The app opens in your browser.
 Keep the terminal open while using the studio; closing it stops the app.
 
-- **1. Add your voice**: choose **I have a file** or **Record my voice**, add your audio, then click **Next**.
+- **1. Add your voice**: choose **Upload a file** or **Record now**, add your audio or video, then click **Continue**.
 - **2. Clean up**: click **Make my voice better**. The recommended settings are already selected.
   Naming the recording, choosing Strong / Soft and turning off **Shorten long pauses** are under **Optional settings**.
 - **3. Download**: play **Before** and **After** side by side, then click **Download my voice**. A video input
