@@ -12,7 +12,7 @@ Options:
   --tighten             Shorten long pauses (> 180 ms) to 140 ms (default on for audio)
   --no-tighten          Keep original pauses intact (default for video)
   -d, --device          Compute device: 'mps' (Apple Silicon GPU), 'cpu', or 'auto' (default: auto)
-  --nfe INT             Diffusion steps (1 to 128, default: 64)
+  --nfe INT             Diffusion steps (1 to 128, default: 32)
   --solver              Numerical ODE solver ('midpoint', 'rk4', 'euler', default: midpoint)
   --tau FLOAT           Prior temperature (0.0 to 1.0, default: 0.5)
   --lufs FLOAT          Target broadcast loudness (default: -14.0 LUFS)
@@ -27,7 +27,7 @@ Pipeline (all local, private, accelerated by Apple Silicon):
 """
 import sys, types, pathlib, os, json, re, subprocess, argparse
 
-__version__ = '2.0.0'
+__version__ = '2.1.0-mlx'
 
 def parse_arguments():
     parser = argparse.ArgumentParser(
@@ -60,8 +60,8 @@ def parse_arguments():
                         help="Keep original timing without pause shortening (default on for video)")
     parser.add_argument('-d', '--device', choices=['auto', 'mps', 'cpu'], default='auto',
                         help="Compute device for CFM diffusion: 'mps' (Apple Silicon GPU), 'cpu', or 'auto' (default: auto)")
-    parser.add_argument('--nfe', type=int, default=64,
-                        help="Number of function evaluations / diffusion steps (1 to 128, default: 64)")
+    parser.add_argument('--nfe', type=int, default=32,
+                        help="Number of function evaluations / diffusion steps (1 to 128, default: 32)")
     parser.add_argument('--solver', choices=['midpoint', 'rk4', 'euler'], default='midpoint',
                         help="Numerical ODE solver for continuous normalizing flow (default: midpoint)")
     parser.add_argument('--tau', type=float, default=0.5,
@@ -173,6 +173,8 @@ if not model_path.is_file():
     model_path = pathlib.Path(hf_hub_download('multimodalart/resemble-enhance-mlx', 'resemble-enhance-mlx.safetensors'))
 
 mlx_model = re_mlx.load(str(model_path), lambd=LAMBD)
+mlx_model.lcfm.cfm.nfe = NFE
+mlx_model.lcfm.cfm.method = SOLVER
 mlx_model.lcfm.cfm._to_v = mx.compile(mlx_model.lcfm.cfm._to_v)
 
 e, esr = re_mlx.enhance(mlx_model, raw_wav, SR)
