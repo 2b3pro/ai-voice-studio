@@ -12,7 +12,7 @@ Options:
   --tighten             Shorten long pauses (> 180 ms) to 140 ms (default on for audio)
   --no-tighten          Keep original pauses intact (default for video)
   -d, --device          Compute device: 'mps' (Apple Silicon GPU), 'cpu', or 'auto' (default: auto)
-  --nfe INT             Diffusion steps (1 to 128, default: 64)
+  --nfe INT             Diffusion steps (1 to 128, default: 32)
   --solver              Numerical ODE solver ('midpoint', 'rk4', 'euler', default: midpoint)
   --tau FLOAT           Prior temperature (0.0 to 1.0, default: 0.5)
   --lufs FLOAT          Target broadcast loudness (default: -14.0 LUFS)
@@ -27,7 +27,7 @@ Pipeline (all local, private, accelerated by Apple Silicon):
 """
 import sys, types, pathlib, os, json, re, subprocess, argparse
 
-__version__ = '2.0.0'
+__version__ = '2.1.0'
 
 def parse_arguments():
     parser = argparse.ArgumentParser(
@@ -60,8 +60,8 @@ def parse_arguments():
                         help="Keep original timing without pause shortening (default on for video)")
     parser.add_argument('-d', '--device', choices=['auto', 'mps', 'cpu'], default='auto',
                         help="Compute device for CFM diffusion: 'mps' (Apple Silicon GPU), 'cpu', or 'auto' (default: auto)")
-    parser.add_argument('--nfe', type=int, default=64,
-                        help="Number of function evaluations / diffusion steps (1 to 128, default: 64)")
+    parser.add_argument('--nfe', type=int, default=32,
+                        help="Number of function evaluations / diffusion steps (1 to 128, default: 32)")
     parser.add_argument('--solver', choices=['midpoint', 'rk4', 'euler'], default='midpoint',
                         help="Numerical ODE solver for continuous normalizing flow (default: midpoint)")
     parser.add_argument('--tau', type=float, default=0.5,
@@ -94,6 +94,9 @@ for name in ['deepspeed', 'deepspeed.accelerator', 'deepspeed.runtime',
 
 import torch, torchaudio
 
+# Optimize OpenMP thread allocation for Apple Silicon performance cores
+torch.set_num_threads(min(8, os.cpu_count() or 4))
+
 # NumPy 2.x compatibility patch for resemble-enhance CFM exponential decay
 try:
     import resemble_enhance.enhancer.lcfm.cfm as _cfm
@@ -116,8 +119,8 @@ import resemble_enhance.enhancer.inference as _enh_inf
 # resemble-enhance Vocoder MPS Numerical Precision Patch:
 # PyTorch Metal (MPS) has an operator bug with dynamic depthwise/group convolutions in
 # UnivNet's LVCBlock, causing amplitude collapse (~25 dB drop) on Apple Silicon GPU.
-# By keeping the heavy 64-step LCFM diffusion on Apple Silicon GPU (MPS) and routing
-# the single-pass Vocoder (~50 ms) to CPU, we retain full Metal speed with 100% studio-grade fidelity.
+# By keeping the fast 32-step LCFM diffusion on Apple Silicon GPU (MPS) and routing
+# the Vocoder to optimized multi-threaded CPU, we retain full Metal speed with 100% studio-grade fidelity.
 _orig_load_enhancer = _enh_inf.load_enhancer
 def _patched_load_enhancer(run_dir, device):
     enhancer = _orig_load_enhancer(run_dir, device)
