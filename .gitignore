@@ -1,6 +1,7 @@
 __pycache__/
 .venv/
 output/
+output*/
 *.wav
 *.m4a
 *.mp3

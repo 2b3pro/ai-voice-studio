@@ -152,8 +152,9 @@ def dec(p):
         subprocess.run([F, '-v', 'error', '-i', str(p), '-ac', '1', '-ar', str(SR), '-f', 'f32le', '-'],
                        capture_output=True, check=True).stdout, np.float32).copy()
 
-def write(p, x, codec='pcm_s24le'):
-    subprocess.run([F, '-v', 'error', '-y', '-f', 'f32le', '-ar', str(SR), '-ac', '1', '-i', '-', '-c:a', codec, str(p)],
+def write(p, x, codec='pcm_s24le', sr=None):
+    r = sr or SR
+    subprocess.run([F, '-v', 'error', '-y', '-f', 'f32le', '-ar', str(r), '-ac', '1', '-i', '-', '-c:a', codec, str(p)],
                    input=x.astype('<f4').tobytes(), check=True)
 
 def loudnorm(src, dst, I=-14, TP=-1.5):
@@ -175,7 +176,7 @@ mlx_model = re_mlx.load(str(model_path), lambd=LAMBD)
 mlx_model.lcfm.cfm._to_v = mx.compile(mlx_model.lcfm.cfm._to_v)
 
 e, esr = re_mlx.enhance(mlx_model, raw_wav, SR)
-write(O / '1-restored.wav', e)
+write(O / '1-restored.wav', e, sr=esr)
 
 x = dec(O / '1-restored.wav')
 progress(0.65, 'Tightening long pauses' if TIGHTEN else 'Keeping your timing')
