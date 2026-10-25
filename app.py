@@ -47,7 +47,7 @@ def video_update(folder):
     return gr.update(value=str(video), visible=True) if video.is_file() else gr.update(value=None, visible=False)
 
 
-def enhance(path, strength, title, tighten=True, progress=gr.Progress()):
+def enhance(path, strength, title, tighten=True, air=3.0, progress=gr.Progress()):
     if not path or not pathlib.Path(path).is_file():
         raise gr.Error('Record your voice or import a file first.')
     key = uuid.uuid4().hex
@@ -56,6 +56,7 @@ def enhance(path, strength, title, tighten=True, progress=gr.Progress()):
     original = 'original' + pathlib.Path(path).suffix.lower()
     source = folder / original
     env = dict(os.environ, VOICE_LAMBD='0.9' if strength == 'Strong' else '0.5',
+               VOICE_AIR_DB=str(air),
                PYTHONUNBUFFERED='1', PYTHONIOENCODING='utf-8')
     if not tighten:
         env['VOICE_TIGHTEN'] = '0'  # when left on, voice_pro.py still keeps the timing of a video
@@ -64,8 +65,16 @@ def enhance(path, strength, title, tighten=True, progress=gr.Progress()):
     try:
         shutil.copy2(path, source)
         with log_path.open('w', encoding='utf-8') as log:
+            cmd = [
+                sys.executable, str(HERE / 'voice_pro.py'),
+                str(source), str(folder),
+                '--lambd', '0.9' if strength == 'Strong' else '0.5',
+                '--air', str(air)
+            ]
+            if not tighten:
+                cmd.append('--no-tighten')
             process = subprocess.Popen(
-                [sys.executable, str(HERE / 'voice_pro.py'), str(source), str(folder)],
+                cmd,
                 stdout=subprocess.PIPE, stderr=log, text=True, encoding='utf-8', env=env)
             info = None
             for line in process.stdout:
@@ -221,8 +230,8 @@ def ready_for_step_two(path):
     return gr.update(visible=False), gr.update(visible=True), path, stepper(2)
 
 
-def finish_voice(path, strength, title, tighten, progress=gr.Progress()):
-    before, after, download, summary, history, video = enhance(path, strength, title, tighten, progress)
+def finish_voice(path, strength, title, tighten, air, progress=gr.Progress()):
+    before, after, download, summary, history, video = enhance(path, strength, title, tighten, air, progress)
     return (before, after, download, f'Saved on this computer · {summary}', history,
             gr.update(visible=False), gr.update(visible=True), stepper(4), video)
 
@@ -230,7 +239,7 @@ def finish_voice(path, strength, title, tighten, progress=gr.Progress()):
 def build_app():
     with gr.Blocks(title='AI Voice Studio', analytics_enabled=False) as demo:
         selected = gr.State(None)
-        gr.HTML("<span class='pill'><span class='dot'></span>AI VOICE STUDIO · BY AMINE</span>", elem_id='brand')
+        gr.HTML("<span class='pill'><span class='dot'></span>AI VOICE STUDIO · MAC EDITION  v2.0.0</span>", elem_id='brand')
         gr.HTML("<div class='bars' aria-hidden='true'>"
                 + ''.join(f"<i style='height:{h}px;animation-delay:{d}s'></i>" for h, d in
                           ((10, 0), (18, .3), (26, .15), (14, .45), (28, .05), (20, .35), (12, .2), (22, .5), (9, .1)))
@@ -255,10 +264,12 @@ def build_app():
                     gr.Markdown('## Clean up your voice\nOne click removes noise and echo, then balances the volume.')
                     preview = gr.Audio(label='Your voice', interactive=False, waveform_options=WAVE)
                     go = gr.Button('✨ Make my voice better', variant='primary', elem_classes='primary-action')
-                    gr.Markdown('Takes a minute or two on a GPU. Keep this page open.', elem_classes='hint')
+                    gr.Markdown('Accelerated by Apple Silicon (Metal). Keep this page open.', elem_classes='hint')
                     with gr.Accordion('Optional settings', open=False):
                         title = gr.Textbox(label='Name', placeholder='My recording', max_lines=1)
                         mode = gr.Radio(['Strong', 'Soft'], value='Strong', label='Cleanup', info='Strong is recommended. Soft keeps more of the room.')
+                        air = gr.Slider(0, 6, value=3.0, step=0.5, label='Air / Highs boost (dB)',
+                                        info='Default 3 dB. Lower this (0–1 dB) if your voice sounds hissy.')
                         tighten = gr.Checkbox(True, label='Shorten long pauses', info='Videos always keep their timing so the voice stays on the lips.')
                     back = gr.Button('← Use another recording', size='sm', elem_classes='ghost')
                 with gr.Column(visible=False, elem_classes='step-card') as step_three:
@@ -301,16 +312,16 @@ def build_app():
         next_button.click(ready_for_step_two, selected, [step_one, step_two, preview, steps])
         back.click(lambda: (gr.update(visible=True), gr.update(visible=False), stepper(1)),
                    outputs=[step_one, step_two, steps], queue=False)
-        go.click(finish_voice, [selected, mode, title, tighten],
+        go.click(finish_voice, [selected, mode, title, tighten, air],
                  [before, after, download, status, history, step_two, step_three, steps, video_out],
                  concurrency_limit=1, concurrency_id='voice_processor', show_progress_on=[preview])
         def reset():
             return (gr.update(visible=True), gr.update(visible=False), gr.update(visible=False),
                     None, None, None, None, None, gr.update(value=None, interactive=False),
-                    gr.update(interactive=False), '', 'Strong', True, stepper(1),
+                    gr.update(interactive=False), '', 'Strong', 3.0, True, stepper(1),
                     gr.update(value=None, visible=False))
         again.click(reset, outputs=[step_one, step_two, step_three, selected, source, file_input,
-                                    before, after, download, next_button, title, mode, tighten, steps, video_out], queue=False)
+                                    before, after, download, next_button, title, mode, air, tighten, steps, video_out], queue=False)
         history.change(open_record, history, [saved_before, saved_after, saved_download, saved_status, saved_video])
         refresh.click(lambda: gr.update(choices=history_choices()), outputs=history)
     return demo

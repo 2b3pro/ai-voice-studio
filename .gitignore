@@ -2,4 +2,9 @@ __pycache__/
 .venv/
 output/
 *.wav
+*.m4a
+*.mp3
+*.mp4
+!demo/*
 local-library/
+.DS_Store
