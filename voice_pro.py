@@ -75,64 +75,13 @@ def parse_arguments():
 cli_args = parse_arguments()
 
 os.environ.setdefault('HF_HUB_DISABLE_XET', '1')
-os.environ.setdefault('PYTORCH_ENABLE_MPS_FALLBACK', '1')
 import numpy as np, imageio_ffmpeg
+import mlx.core as mx
+import resemble_enhance_mlx as re_mlx
+from resemble_enhance_mlx import lvc
 
-# DeepSpeed stub (only used for training upstream; stubs allow inference on macOS)
-class _Any:
-    def __init__(self, *a, **k): pass
-    def __call__(self, *a, **k): return _Any()
-    def __getattr__(self, n):
-        if n.startswith('__'): raise AttributeError(n)
-        return _Any()
-def _mod_getattr(n):
-    if n.startswith('__'): raise AttributeError(n)
-    return _Any
-for name in ['deepspeed', 'deepspeed.accelerator', 'deepspeed.runtime',
-             'deepspeed.runtime.engine', 'deepspeed.runtime.utils', 'deepspeed.utils']:
-    m = types.ModuleType(name); m.__getattr__ = _mod_getattr; sys.modules[name] = m
-
-import torch, torchaudio
-
-# NumPy 2.x compatibility patch for resemble-enhance CFM exponential decay
-try:
-    import resemble_enhance.enhancer.lcfm.cfm as _cfm
-    _orig_decay = _cfm.CFM.exponential_decay_mapping
-    def _safe_decay(t, n=4):
-        try:
-            return _orig_decay(t, n=n)
-        except TypeError:
-            import scipy.optimize
-            def h(t, a): return (a**t - 1) / (a - 1)
-            sol = scipy.optimize.fsolve(lambda a: h(1 / n, a) - 0.5, x0=0)
-            return h(t, a=float(np.asarray(sol).flat[0]))
-    _cfm.CFM.exponential_decay_mapping = staticmethod(_safe_decay)
-except Exception:
-    pass
-
-from resemble_enhance.enhancer.inference import enhance
-import resemble_enhance.enhancer.inference as _enh_inf
-
-# resemble-enhance Vocoder MPS Numerical Precision Patch:
-# PyTorch Metal (MPS) has an operator bug with dynamic depthwise/group convolutions in
-# UnivNet's LVCBlock, causing amplitude collapse (~25 dB drop) on Apple Silicon GPU.
-# By keeping the heavy 64-step LCFM diffusion on Apple Silicon GPU (MPS) and routing
-# the single-pass Vocoder (~50 ms) to CPU, we retain full Metal speed with 100% studio-grade fidelity.
-_orig_load_enhancer = _enh_inf.load_enhancer
-def _patched_load_enhancer(run_dir, device):
-    enhancer = _orig_load_enhancer(run_dir, device)
-    if str(device) == 'mps':
-        enhancer.vocoder = enhancer.vocoder.to('cpu')
-        _orig_vocoder_forward = enhancer.vocoder.forward
-        def _cpu_vocoder_forward(x, y=None):
-            x_cpu = x.cpu()
-            y_cpu = y.cpu() if y is not None else None
-            out = _orig_vocoder_forward(x_cpu, y_cpu)
-            return out.to('mps')
-        enhancer.vocoder.forward = _cpu_vocoder_forward
-    return enhancer
-_enh_inf.load_enhancer = _patched_load_enhancer
-enhance = _enh_inf.enhance
+# JIT-compile location-variable convolution Metal kernels for maximum performance
+lvc.location_variable_convolution = mx.compile(lvc.location_variable_convolution)
 
 args = [a for a in sys.argv[1:] if not a.startswith('--')]
 
@@ -214,19 +163,19 @@ def loudnorm(src, dst, I=-14, TP=-1.5):
     run(['-i', str(src), '-af', f'volume={gain:.3f}dB', '-ar', str(SR), '-c:a', 'pcm_s24le', str(dst)])
     return {'lufs': round(float(m['input_i']) + gain, 2), 'true_peak': round(float(m['input_tp']) + gain, 2), 'gain_db': round(gain, 2)}
 
-# 1) Restoration via Metal / MPS acceleration
-if cli_args.device == 'auto':
-    device = 'mps' if torch.backends.mps.is_available() else 'cpu'
-else:
-    device = cli_args.device
+# 1) Restoration via Apple Silicon Native MLX Engine
+progress(0.15, f'Removing noise and echo with AI (Apple MLX Metal accelerated, lambd={LAMBD})')
+raw_wav = dec(IN)
+model_path = pathlib.Path(__file__).parent / 'resemble-enhance-mlx.safetensors'
+if not model_path.is_file():
+    from huggingface_hub import hf_hub_download
+    model_path = pathlib.Path(hf_hub_download('multimodalart/resemble-enhance-mlx', 'resemble-enhance-mlx.safetensors'))
 
-progress(0.15, f'Removing noise and echo with AI ({device.upper()} accelerated, nfe={NFE}, lambd={LAMBD})')
-wav, sr = torchaudio.load(str(IN))
-wav = wav.mean(0)
-e, esr = enhance(wav, sr, device, nfe=NFE, solver=SOLVER, lambd=LAMBD, tau=TAU)
-torchaudio.save(str(O / '1-restored.wav'), e[None].cpu(), esr)
-if device == 'mps':
-    torch.mps.empty_cache()
+mlx_model = re_mlx.load(str(model_path), lambd=LAMBD)
+mlx_model.lcfm.cfm._to_v = mx.compile(mlx_model.lcfm.cfm._to_v)
+
+e, esr = re_mlx.enhance(mlx_model, raw_wav, SR)
+write(O / '1-restored.wav', e)
 
 x = dec(O / '1-restored.wav')
 progress(0.65, 'Tightening long pauses' if TIGHTEN else 'Keeping your timing')

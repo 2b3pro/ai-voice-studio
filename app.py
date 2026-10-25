@@ -239,7 +239,7 @@ def finish_voice(path, strength, title, tighten, air, progress=gr.Progress()):
 def build_app():
     with gr.Blocks(title='AI Voice Studio', analytics_enabled=False) as demo:
         selected = gr.State(None)
-        gr.HTML("<span class='pill'><span class='dot'></span>AI VOICE STUDIO · MAC EDITION  v2.0.0</span>", elem_id='brand')
+        gr.HTML("<span class='pill'><span class='dot'></span>AI VOICE STUDIO · APPLE MLX NATIVE  v2.0.0-mlx</span>", elem_id='brand')
         gr.HTML("<div class='bars' aria-hidden='true'>"
                 + ''.join(f"<i style='height:{h}px;animation-delay:{d}s'></i>" for h, d in
                           ((10, 0), (18, .3), (26, .15), (14, .45), (28, .05), (20, .35), (12, .2), (22, .5), (9, .1)))

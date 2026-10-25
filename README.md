@@ -1,25 +1,26 @@
-# AI Voice Studio 🎧 (Mac Edition) — Apple Silicon Native
+# AI Voice Studio 🎧 (Apple MLX Edition) — Apple Silicon Native
 
-**Turn your phone voice note into a studio-mic voice. Free, 100% private, accelerated by Apple Silicon.**
+**Turn your phone voice note into a studio-mic voice. Free, 100% private, accelerated natively by Apple MLX.**
 
 [![License: MIT](https://img.shields.io/badge/license-MIT-green)](LICENSE)
-![Version](https://img.shields.io/badge/version-v2.0.0--mac-blue?logo=apple)
+![Version](https://img.shields.io/badge/version-v2.0.0--mlx-purple?logo=apple)
+![Engine](https://img.shields.io/badge/engine-Apple%20MLX%20Native-purple?logo=apple)
 ![Apple Silicon](https://img.shields.io/badge/Apple%20Silicon-M1%20|%20M2%20|%20M3%20|%20M4%20|%20M5-black?logo=apple)
 ![macOS](https://img.shields.io/badge/macOS-13%2B-blue?logo=apple)
-![Acceleration](https://img.shields.io/badge/accelerated%20by-Metal%20(MPS)-orange)
 ![Python 3.10--3.13](https://img.shields.io/badge/python-3.10%E2%80%933.13-blue)
 
-Original audio restoration engine created by **Amine ([@justbyamine](https://www.instagram.com/justbyamine/))**. This fork is specifically ported and optimized as a **Mac-centric edition** designed for Apple Silicon hardware.
+Original audio restoration engine created by **Amine ([@justbyamine](https://www.instagram.com/justbyamine/))**. This worktree is ported to run natively on **Apple MLX** (Machine Learning for Apple Silicon), eliminating PyTorch and DeepSpeed dependencies entirely.
 
 ---
 
-## Apple Silicon Features
+## Apple MLX Features
 
-* ⚡ **Metal Performance Shaders (MPS):** Full GPU acceleration on Apple Silicon unified memory for the [resemble-enhance](https://github.com/resemble-ai/resemble-enhance) continuous normalizing flow (CFM) diffusion model.
+* ⚡ **Pure Apple MLX Architecture:** 100% torch-free inference using Apple's native MLX framework with JIT Metal kernel compilation (`mx.compile`).
+* 📦 **Ultra-Lightweight Footprint:** Virtualenv is only **~550 MB** (compared to 2.9 GB with PyTorch + CUDA/MPS dependencies).
+* 🔒 **Zero PyTorch Operator Bugs:** Eliminates MPS kernel depthwise convolution issues by using Apple's unified memory arrays and safetensors.
 * 🎧 **Apple AudioToolbox (`aac_at`):** Uses macOS's native CoreAudio master-grade AAC encoder for high-fidelity audio muxing in exported videos.
 * 🎬 **Apple VideoToolbox (`h264_videotoolbox`):** Offloads video muxing and transcoding to Apple Silicon's dedicated hardware Media Engine.
-* 🎚️ **Interactive Air / Hiss Control:** Web UI slider under Optional Settings to dial in high-frequency boost (0 to 6 dB) and tame AI-generated treble/sibilance.
-* 🚀 **Modern Python & NumPy 2.x Support:** Built-in runtime compatibility patches for NumPy 2.x and Python 3.12+ environments.
+* 🎚️ **Interactive Air / Hiss Control:** Web UI slider under Optional Settings to dial in high-frequency boost (0 to 6 dB).
 * 🖱️ **Finder One-Click Launcher:** Double-click [`Launch Studio.command`](Launch Studio.command) directly from macOS Finder.
 
 ---

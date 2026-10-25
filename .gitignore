@@ -7,4 +7,5 @@ output/
 *.mp4
 !demo/*
 local-library/
+*.safetensors
 .DS_Store
