@@ -1,0 +1,57 @@
+#!/bin/bash
+# studio — run the Voice Pro pipeline on one or more files from anywhere.
+#
+#   studio <file> [file ...] [voice_pro flags]
+#
+# For each input, intermediates go to <dir>/<stem>-studio/ and the finished
+# voice is copied next to the input as <stem>-studio.wav (or .mp4 for video).
+# Flags after the files pass straight to voice_pro.py, e.g.
+#   studio take.m4a --strength natural --air 1.5
+# Symlink onto PATH to use anywhere:
+#   ln -s "$PWD/studio" ~/.local/bin/studio
+set -euo pipefail
+
+REPO="$(cd "$(dirname "$(realpath "$0")")" && pwd)"
+
+if [ $# -eq 0 ] || [ "$1" = "-h" ] || [ "$1" = "--help" ]; then
+    sed -n '2,11p' "$0" | sed 's/^# \{0,1\}//'
+    exit 0
+fi
+
+inputs=()
+while [ $# -gt 0 ] && [[ "$1" != -* ]]; do
+    inputs+=("$1")
+    shift
+done
+flags=("$@")
+
+if [ ${#inputs[@]} -eq 0 ]; then
+    echo "studio: no input files given" >&2
+    exit 1
+fi
+
+source "$REPO/.venv/bin/activate"
+export PYTORCH_ENABLE_MPS_FALLBACK=1
+
+for f in "${inputs[@]}"; do
+    if [ ! -f "$f" ]; then
+        echo "studio: not a file: $f" >&2
+        exit 1
+    fi
+    src="$(realpath "$f")"
+    dir="$(dirname "$src")"
+    name="$(basename "$src")"
+    stem="${name%.*}"
+    out="$dir/$stem-studio"
+
+    echo "▸ $name → $out/"
+    python3 "$REPO/voice_pro.py" "$src" "$out" ${flags[@]+"${flags[@]}"}
+
+    if [ -f "$out/Voice-Pro-Video.mp4" ]; then
+        cp "$out/Voice-Pro-Video.mp4" "$dir/$stem-studio.mp4"
+        echo "✓ $dir/$stem-studio.mp4"
+    else
+        cp "$out/Voice-Pro-Final.wav" "$dir/$stem-studio.wav"
+        echo "✓ $dir/$stem-studio.wav"
+    fi
+done

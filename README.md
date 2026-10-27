@@ -83,6 +83,16 @@ python3 voice_pro.py interview.wav output_folder --nfe 32 --no-tighten
 python3 voice_pro.py podcast.wav output_folder --air 0.0 --lufs -16.0 --tp -2.0
 ```
 
+### Option C: `studio` shortcut
+
+Runs from any folder without activating the venv. The finished voice lands next to each input as `<name>-studio.wav` (or `.mp4`), with intermediates in `<name>-studio/`.
+
+```bash
+./studio voice.m4a                          # one file
+./studio take1.wav take2.wav --air 1.5      # several files; trailing flags go to voice_pro.py
+ln -s "$PWD/studio" ~/.local/bin/studio     # optional: put it on your PATH
+```
+
 #### Available CLI Customization Flags
 
 | Flag | Type / Choices | Default | Description |
